@@ -577,10 +577,6 @@ async def reorder_tasks(task_orders: List[dict], user: User = Depends(get_curren
         )
     
     return {"message": "Tasks reordered successfully"}
-        "completed": completed_tasks,
-        "pending": total_tasks - completed_tasks,
-        "completion_rate": round((completed_tasks / total_tasks * 100) if total_tasks > 0 else 0, 1)
-    }
 
 # ==================== AI CHAT ENDPOINTS ====================
 
