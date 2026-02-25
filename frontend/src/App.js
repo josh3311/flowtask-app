@@ -4,7 +4,6 @@ import axios from "axios";
 import { 
   Calendar, 
   CheckCircle2, 
-  Circle, 
   Plus, 
   Trash2, 
   Edit3, 
@@ -18,11 +17,16 @@ import {
   ListTodo,
   Bot,
   Play,
-  X,
-  Sparkles,
-  TrendingUp,
+  Sun,
+  Moon,
   Clock,
-  AlertCircle,
+  LogOut,
+  User,
+  Mail,
+  Lock,
+  Eye,
+  EyeOff,
+  Sparkles,
   Volume2
 } from "lucide-react";
 import { Toaster, toast } from "sonner";
@@ -30,7 +34,10 @@ import { Toaster, toast } from "sonner";
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
-// Utility functions
+// Configure axios to send cookies
+axios.defaults.withCredentials = true;
+
+// ==================== UTILITY FUNCTIONS ====================
 const formatDateKey = (date) => {
   const d = date instanceof Date ? date : new Date(date);
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -48,14 +55,291 @@ const formatDisplayDate = (dateKey) => {
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 };
 
+const formatTime = (time) => {
+  if (!time) return '';
+  const [hours, minutes] = time.split(':');
+  const h = parseInt(hours);
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  const hour12 = h % 12 || 12;
+  return `${hour12}:${minutes} ${ampm}`;
+};
+
 const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
-// Priority badge component
+// ==================== THEME HOOK ====================
+const useTheme = () => {
+  const [theme, setTheme] = useState(() => {
+    const saved = localStorage.getItem('theme');
+    return saved || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+  });
+
+  useEffect(() => {
+    const root = document.documentElement;
+    if (theme === 'dark') {
+      root.classList.add('dark');
+    } else {
+      root.classList.remove('dark');
+    }
+    localStorage.setItem('theme', theme);
+  }, [theme]);
+
+  const toggleTheme = () => setTheme(prev => prev === 'dark' ? 'light' : 'dark');
+
+  return { theme, toggleTheme };
+};
+
+// ==================== LIVE CLOCK COMPONENT ====================
+const LiveClock = ({ className = "" }) => {
+  const [time, setTime] = useState(new Date());
+
+  useEffect(() => {
+    const timer = setInterval(() => setTime(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  return (
+    <div className={`clock-display ${className}`}>
+      <div className="text-3xl md:text-4xl font-bold">
+        {time.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}
+      </div>
+      <div className="text-sm text-muted-foreground">
+        {time.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+      </div>
+    </div>
+  );
+};
+
+// ==================== AUTH COMPONENTS ====================
+const AuthPage = ({ onLogin }) => {
+  const [isLogin, setIsLogin] = useState(true);
+  const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    email: '',
+    password: '',
+    name: ''
+  });
+  const { theme, toggleTheme } = useTheme();
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      const endpoint = isLogin ? '/auth/login' : '/auth/register';
+      const response = await axios.post(`${API}${endpoint}`, formData);
+      toast.success(isLogin ? 'Welcome back!' : 'Account created successfully!');
+      onLogin(response.data);
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Authentication failed');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleLogin = () => {
+    // REMINDER: DO NOT HARDCODE THE URL, OR ADD ANY FALLBACKS OR REDIRECT URLS, THIS BREAKS THE AUTH
+    const redirectUrl = window.location.origin + '/auth/callback';
+    window.location.href = `https://auth.emergentagent.com/?redirect=${encodeURIComponent(redirectUrl)}`;
+  };
+
+  return (
+    <div className="min-h-screen auth-bg flex items-center justify-center p-4">
+      <div className="absolute top-4 right-4">
+        <button
+          onClick={toggleTheme}
+          className="p-3 rounded-full glass hover:bg-muted transition-colors"
+          data-testid="theme-toggle-auth"
+        >
+          {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+        </button>
+      </div>
+
+      <div className="w-full max-w-md animate-slide-up">
+        <div className="text-center mb-8">
+          <div className="w-16 h-16 rounded-2xl gradient-flow flex items-center justify-center mx-auto mb-4 animate-neon-glow">
+            <Zap className="w-8 h-8 text-white" />
+          </div>
+          <h1 className="text-3xl font-bold mb-2">
+            <span className="bg-gradient-to-r from-primary via-accent to-secondary bg-clip-text text-transparent">
+              FlowTask Pro
+            </span>
+          </h1>
+          <p className="text-muted-foreground">AI-powered task management</p>
+        </div>
+
+        <div className="glass rounded-2xl p-6 neon-border">
+          <div className="flex mb-6">
+            <button
+              onClick={() => setIsLogin(true)}
+              className={`flex-1 py-2 text-sm font-medium rounded-l-xl transition-all ${
+                isLogin ? 'bg-primary text-white' : 'bg-muted text-muted-foreground hover:text-foreground'
+              }`}
+              data-testid="login-tab"
+            >
+              Sign In
+            </button>
+            <button
+              onClick={() => setIsLogin(false)}
+              className={`flex-1 py-2 text-sm font-medium rounded-r-xl transition-all ${
+                !isLogin ? 'bg-primary text-white' : 'bg-muted text-muted-foreground hover:text-foreground'
+              }`}
+              data-testid="register-tab"
+            >
+              Sign Up
+            </button>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {!isLogin && (
+              <div>
+                <label className="block text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">
+                  Full Name
+                </label>
+                <div className="relative">
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                  <input
+                    data-testid="name-input"
+                    type="text"
+                    value={formData.name}
+                    onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                    className="w-full pl-10 pr-4 py-3 rounded-xl bg-muted/50 border border-transparent focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                    placeholder="John Doe"
+                    required={!isLogin}
+                  />
+                </div>
+              </div>
+            )}
+
+            <div>
+              <label className="block text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">
+                Email
+              </label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                <input
+                  data-testid="email-input"
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                  className="w-full pl-10 pr-4 py-3 rounded-xl bg-muted/50 border border-transparent focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                  placeholder="you@example.com"
+                  required
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">
+                Password
+              </label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                <input
+                  data-testid="password-input"
+                  type={showPassword ? 'text' : 'password'}
+                  value={formData.password}
+                  onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
+                  className="w-full pl-10 pr-12 py-3 rounded-xl bg-muted/50 border border-transparent focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                  placeholder="••••••••"
+                  required
+                  minLength={6}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                >
+                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                </button>
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full py-3 gradient-flow text-white rounded-xl font-semibold transition-all hover:shadow-[0_0_20px_rgba(99,102,241,0.5)] active:scale-95 disabled:opacity-50"
+              data-testid="submit-auth-btn"
+            >
+              {loading ? 'Please wait...' : (isLogin ? 'Sign In' : 'Create Account')}
+            </button>
+          </form>
+
+          <div className="relative my-6">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-border" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-card px-2 text-muted-foreground">Or continue with</span>
+            </div>
+          </div>
+
+          <button
+            onClick={handleGoogleLogin}
+            className="w-full py-3 border border-border rounded-xl font-medium hover:bg-muted transition-all flex items-center justify-center gap-2"
+            data-testid="google-login-btn"
+          >
+            <svg className="w-5 h-5" viewBox="0 0 24 24">
+              <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+              <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+              <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+              <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+            </svg>
+            Continue with Google
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Auth Callback Component
+const AuthCallback = ({ onLogin }) => {
+  const hasProcessed = useRef(false);
+
+  useEffect(() => {
+    if (hasProcessed.current) return;
+    hasProcessed.current = true;
+
+    const processAuth = async () => {
+      const hash = window.location.hash;
+      const sessionIdMatch = hash.match(/session_id=([^&]+)/);
+      
+      if (sessionIdMatch) {
+        const sessionId = sessionIdMatch[1];
+        try {
+          const response = await axios.post(`${API}/auth/google/session`, { session_id: sessionId });
+          toast.success('Welcome!');
+          onLogin(response.data);
+          window.history.replaceState(null, '', window.location.pathname);
+        } catch (error) {
+          toast.error('Authentication failed');
+          window.location.href = '/';
+        }
+      } else {
+        window.location.href = '/';
+      }
+    };
+
+    processAuth();
+  }, [onLogin]);
+
+  return (
+    <div className="min-h-screen flex items-center justify-center">
+      <div className="text-center">
+        <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+        <p className="text-muted-foreground">Authenticating...</p>
+      </div>
+    </div>
+  );
+};
+
+// ==================== PRIORITY BADGE ====================
 const PriorityBadge = ({ priority }) => {
   const colors = {
-    high: 'bg-red-500/20 text-red-400 border-red-500/30',
-    medium: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
-    low: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
+    high: 'bg-red-500/20 text-red-500 dark:text-red-400 border-red-500/30',
+    medium: 'bg-amber-500/20 text-amber-600 dark:text-amber-400 border-amber-500/30',
+    low: 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border-emerald-500/30'
   };
   
   return (
@@ -65,12 +349,12 @@ const PriorityBadge = ({ priority }) => {
   );
 };
 
-// Task Card Component
+// ==================== TASK CARD ====================
 const TaskCard = ({ task, onToggle, onEdit, onDelete, showDate = false }) => {
   return (
     <div 
       data-testid={`task-card-${task.id}`}
-      className={`glass rounded-xl p-4 border border-white/5 transition-all duration-300 hover:border-primary/30 group ${task.completed ? 'opacity-60' : ''}`}
+      className={`glass rounded-xl p-4 border border-border/50 transition-all duration-300 hover:border-primary/30 group ${task.completed ? 'opacity-60' : ''}`}
     >
       <div className="flex items-center gap-3">
         <button
@@ -95,13 +379,19 @@ const TaskCard = ({ task, onToggle, onEdit, onDelete, showDate = false }) => {
                 {formatDisplayDate(task.date)}
               </span>
             )}
+            {task.time && (
+              <span className="text-xs text-primary flex items-center gap-1">
+                <Clock className="w-3 h-3" />
+                {formatTime(task.time)}
+              </span>
+            )}
             {task.audio_base64 && (
               <button 
                 onClick={() => {
                   const audio = new Audio(task.audio_base64);
                   audio.play();
                 }}
-                className="text-xs text-primary hover:text-primary/80 flex items-center gap-1"
+                className="text-xs text-accent hover:text-accent/80 flex items-center gap-1"
               >
                 <Volume2 className="w-3 h-3" /> Voice
               </button>
@@ -131,10 +421,11 @@ const TaskCard = ({ task, onToggle, onEdit, onDelete, showDate = false }) => {
   );
 };
 
-// Dashboard Section
-const DashboardSection = ({ tasks, selectedDate, setSelectedDate, onToggleTask, onEditTask, onDeleteTask, onQuickAdd, stats }) => {
+// ==================== DASHBOARD SECTION ====================
+const DashboardSection = ({ tasks, selectedDate, setSelectedDate, onToggleTask, onEditTask, onDeleteTask, onQuickAdd, stats, user }) => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [quickTaskText, setQuickTaskText] = useState('');
+  const [quickTaskTime, setQuickTaskTime] = useState('');
   
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
@@ -148,8 +439,9 @@ const DashboardSection = ({ tasks, selectedDate, setSelectedDate, onToggleTask, 
   
   const handleQuickAdd = () => {
     if (!quickTaskText.trim()) return;
-    onQuickAdd(quickTaskText, formatDateKey(selectedDate));
+    onQuickAdd(quickTaskText, formatDateKey(selectedDate), quickTaskTime || null);
     setQuickTaskText('');
+    setQuickTaskTime('');
   };
   
   const changeMonth = (delta) => {
@@ -158,7 +450,6 @@ const DashboardSection = ({ tasks, selectedDate, setSelectedDate, onToggleTask, 
     setCurrentDate(newDate);
   };
   
-  // Generate calendar days
   const calendarDays = [];
   for (let i = 0; i < firstDay; i++) {
     calendarDays.push(null);
@@ -169,20 +460,29 @@ const DashboardSection = ({ tasks, selectedDate, setSelectedDate, onToggleTask, 
 
   return (
     <div className="animate-slide-up">
-      {/* Header */}
-      <header className="mb-8 text-left">
-        <h1 className="text-4xl md:text-5xl font-bold mb-2">
-          <span className="bg-gradient-to-r from-primary via-accent to-secondary bg-clip-text text-transparent">FlowTask</span>
-        </h1>
-        <p className="text-muted-foreground text-lg">
-          You have <span className="text-primary font-semibold">{stats?.pending || 0}</span> tasks pending
-        </p>
+      {/* Header with Clock */}
+      <header className="mb-8">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div>
+            <h1 className="text-4xl md:text-5xl font-bold mb-2">
+              <span className="bg-gradient-to-r from-primary via-accent to-secondary bg-clip-text text-transparent">
+                Hello, {user?.name?.split(' ')[0] || 'there'}
+              </span>
+            </h1>
+            <p className="text-muted-foreground text-lg">
+              You have <span className="text-primary font-semibold">{stats?.pending || 0}</span> tasks pending
+            </p>
+          </div>
+          <div className="glass rounded-2xl p-4 neon-border text-center md:text-right">
+            <LiveClock />
+          </div>
+        </div>
       </header>
 
       <div className="grid lg:grid-cols-12 gap-6">
-        {/* Left Column - Calendar & Quick Add */}
+        {/* Left Column */}
         <div className="lg:col-span-5 space-y-6">
-          {/* Calendar Card */}
+          {/* Calendar */}
           <div className="glass rounded-2xl p-6 neon-border">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-semibold flex items-center gap-2">
@@ -207,7 +507,6 @@ const DashboardSection = ({ tasks, selectedDate, setSelectedDate, onToggleTask, 
               </div>
             </div>
             
-            {/* Days header */}
             <div className="grid grid-cols-7 gap-1 mb-2">
               {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map(day => (
                 <div key={day} className="text-center text-xs font-semibold text-muted-foreground py-1">
@@ -216,7 +515,6 @@ const DashboardSection = ({ tasks, selectedDate, setSelectedDate, onToggleTask, 
               ))}
             </div>
             
-            {/* Calendar grid */}
             <div className="grid grid-cols-7 gap-1">
               {calendarDays.map((day, index) => {
                 if (day === null) {
@@ -252,7 +550,6 @@ const DashboardSection = ({ tasks, selectedDate, setSelectedDate, onToggleTask, 
               })}
             </div>
             
-            {/* Selected date info */}
             <div className="mt-4 pt-4 border-t border-border/50">
               <div className="flex items-center justify-between">
                 <div>
@@ -284,7 +581,7 @@ const DashboardSection = ({ tasks, selectedDate, setSelectedDate, onToggleTask, 
               <Plus className="w-4 h-4 text-emerald-500" />
               Quick Add
             </h3>
-            <div className="flex gap-2">
+            <div className="space-y-3">
               <input
                 data-testid="quick-add-input"
                 type="text"
@@ -292,20 +589,32 @@ const DashboardSection = ({ tasks, selectedDate, setSelectedDate, onToggleTask, 
                 onChange={(e) => setQuickTaskText(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && handleQuickAdd()}
                 placeholder="What needs to be done?"
-                className="flex-1 px-4 py-3 rounded-xl bg-muted/50 border border-transparent focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm"
+                className="w-full px-4 py-3 rounded-xl bg-muted/50 border border-transparent focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm"
               />
-              <button
-                data-testid="quick-add-btn"
-                onClick={handleQuickAdd}
-                className="px-4 py-3 gradient-flow text-white rounded-xl font-medium transition-all hover:shadow-[0_0_20px_rgba(99,102,241,0.5)] active:scale-95"
-              >
-                <Plus className="w-5 h-5" />
-              </button>
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <Clock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <input
+                    data-testid="quick-add-time"
+                    type="time"
+                    value={quickTaskTime}
+                    onChange={(e) => setQuickTaskTime(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2 rounded-xl bg-muted/50 border border-transparent focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm"
+                  />
+                </div>
+                <button
+                  data-testid="quick-add-btn"
+                  onClick={handleQuickAdd}
+                  className="px-6 py-2 gradient-flow text-white rounded-xl font-medium transition-all hover:shadow-[0_0_20px_rgba(99,102,241,0.5)] active:scale-95"
+                >
+                  <Plus className="w-5 h-5" />
+                </button>
+              </div>
             </div>
           </div>
         </div>
         
-        {/* Right Column - Daily Flow & Tasks */}
+        {/* Right Column */}
         <div className="lg:col-span-7 space-y-6">
           {/* Daily Flow Map */}
           <div className="glass rounded-2xl p-6 neon-border min-h-[160px]">
@@ -327,13 +636,18 @@ const DashboardSection = ({ tasks, selectedDate, setSelectedDate, onToggleTask, 
               ) : (
                 dayTasks.map((task, index) => (
                   <div key={task.id} className="flex-shrink-0 relative snap-start animate-slide-in" style={{ animationDelay: `${index * 0.1}s` }}>
-                    <div className={`w-16 h-16 md:w-20 md:h-20 rounded-2xl flex items-center justify-center shadow-lg transition-all hover:scale-110 ${
+                    <div className={`w-16 h-16 md:w-20 md:h-20 rounded-2xl flex flex-col items-center justify-center shadow-lg transition-all hover:scale-110 ${
                       task.completed ? 'gradient-success' : 'gradient-flow'
                     }`}>
                       {task.completed ? (
                         <CheckCircle2 className="w-8 h-8 text-white" />
                       ) : (
-                        <span className="text-xl font-bold text-white">{index + 1}</span>
+                        <>
+                          <span className="text-xl font-bold text-white">{index + 1}</span>
+                          {task.time && (
+                            <span className="text-[10px] text-white/80">{formatTime(task.time)}</span>
+                          )}
+                        </>
                       )}
                     </div>
                     <p className="mt-2 text-xs font-medium text-muted-foreground truncate w-16 md:w-20 text-center">
@@ -375,12 +689,13 @@ const DashboardSection = ({ tasks, selectedDate, setSelectedDate, onToggleTask, 
   );
 };
 
-// Task Manager Section
+// ==================== TASK MANAGER SECTION ====================
 const TaskManagerSection = ({ tasks, onCreateTask, onUpdateTask, onDeleteTask, onToggleTask }) => {
   const [editingTask, setEditingTask] = useState(null);
   const [formData, setFormData] = useState({
     text: '',
     date: formatDateKey(new Date()),
+    time: '',
     priority: 'medium',
     audio_base64: null
   });
@@ -390,10 +705,8 @@ const TaskManagerSection = ({ tasks, onCreateTask, onUpdateTask, onDeleteTask, o
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
   
-  // Get unique dates for filter
   const uniqueDates = [...new Set(tasks.map(t => t.date))].sort();
   
-  // Filter tasks
   let filteredTasks = [...tasks];
   if (filterDate !== 'all') {
     filteredTasks = filteredTasks.filter(t => t.date === filterDate);
@@ -402,7 +715,6 @@ const TaskManagerSection = ({ tasks, onCreateTask, onUpdateTask, onDeleteTask, o
     filteredTasks = filteredTasks.filter(t => t.priority === filterPriority);
   }
   
-  // Sort by date then priority
   const priorityOrder = { high: 3, medium: 2, low: 1 };
   filteredTasks.sort((a, b) => {
     if (a.date !== b.date) return a.date.localeCompare(b.date);
@@ -416,11 +728,16 @@ const TaskManagerSection = ({ tasks, onCreateTask, onUpdateTask, onDeleteTask, o
       return;
     }
     
+    const taskData = {
+      ...formData,
+      time: formData.time || null
+    };
+    
     if (editingTask) {
-      await onUpdateTask(editingTask.id, formData);
+      await onUpdateTask(editingTask.id, taskData);
       toast.success('Task updated!');
     } else {
-      await onCreateTask(formData);
+      await onCreateTask(taskData);
       toast.success('Task created!');
     }
     
@@ -431,6 +748,7 @@ const TaskManagerSection = ({ tasks, onCreateTask, onUpdateTask, onDeleteTask, o
     setFormData({
       text: '',
       date: formatDateKey(new Date()),
+      time: '',
       priority: 'medium',
       audio_base64: null
     });
@@ -442,6 +760,7 @@ const TaskManagerSection = ({ tasks, onCreateTask, onUpdateTask, onDeleteTask, o
     setFormData({
       text: task.text,
       date: task.date,
+      time: task.time || '',
       priority: task.priority,
       audio_base64: task.audio_base64
     });
@@ -516,18 +835,32 @@ const TaskManagerSection = ({ tasks, onCreateTask, onUpdateTask, onDeleteTask, o
                 />
               </div>
               
-              <div>
-                <label className="block text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">
-                  Date
-                </label>
-                <input
-                  data-testid="task-date-input"
-                  type="date"
-                  value={formData.date}
-                  onChange={(e) => setFormData(prev => ({ ...prev, date: e.target.value }))}
-                  className="w-full px-4 py-3 rounded-xl bg-muted/50 border border-transparent focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
-                  required
-                />
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">
+                    Date
+                  </label>
+                  <input
+                    data-testid="task-date-input"
+                    type="date"
+                    value={formData.date}
+                    onChange={(e) => setFormData(prev => ({ ...prev, date: e.target.value }))}
+                    className="w-full px-4 py-3 rounded-xl bg-muted/50 border border-transparent focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">
+                    Time
+                  </label>
+                  <input
+                    data-testid="task-time-input"
+                    type="time"
+                    value={formData.time}
+                    onChange={(e) => setFormData(prev => ({ ...prev, time: e.target.value }))}
+                    className="w-full px-4 py-3 rounded-xl bg-muted/50 border border-transparent focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                  />
+                </div>
               </div>
               
               <div>
@@ -543,9 +876,9 @@ const TaskManagerSection = ({ tasks, onCreateTask, onUpdateTask, onDeleteTask, o
                       onClick={() => setFormData(prev => ({ ...prev, priority }))}
                       className={`py-2 rounded-lg border-2 text-sm font-medium transition-all touch-target ${
                         formData.priority === priority
-                          ? priority === 'high' ? 'border-red-500 bg-red-500/20 text-red-400'
-                          : priority === 'medium' ? 'border-amber-500 bg-amber-500/20 text-amber-400'
-                          : 'border-emerald-500 bg-emerald-500/20 text-emerald-400'
+                          ? priority === 'high' ? 'border-red-500 bg-red-500/20 text-red-500 dark:text-red-400'
+                          : priority === 'medium' ? 'border-amber-500 bg-amber-500/20 text-amber-600 dark:text-amber-400'
+                          : 'border-emerald-500 bg-emerald-500/20 text-emerald-600 dark:text-emerald-400'
                           : 'border-border hover:border-muted-foreground'
                       }`}
                     >
@@ -573,7 +906,7 @@ const TaskManagerSection = ({ tasks, onCreateTask, onUpdateTask, onDeleteTask, o
                   </button>
                   <div className="flex-1">
                     {isRecording && (
-                      <span className="text-sm text-red-400">Recording... Tap to stop</span>
+                      <span className="text-sm text-red-500">Recording... Tap to stop</span>
                     )}
                     {formData.audio_base64 && !isRecording && (
                       <div className="flex items-center gap-2">
@@ -678,7 +1011,7 @@ const TaskManagerSection = ({ tasks, onCreateTask, onUpdateTask, onDeleteTask, o
   );
 };
 
-// AI Assistant Section
+// ==================== AI ASSISTANT SECTION ====================
 const AIAssistantSection = ({ sessionId }) => {
   const [messages, setMessages] = useState([
     {
@@ -804,7 +1137,7 @@ const AIAssistantSection = ({ sessionId }) => {
                   {message.role === 'assistant' ? (
                     <Zap className="w-5 h-5 text-white" />
                   ) : (
-                    <div className="w-5 h-5 rounded-full bg-foreground/20" />
+                    <User className="w-5 h-5 text-muted-foreground" />
                   )}
                 </div>
                 <div className={`max-w-[80%] md:max-w-[70%] rounded-2xl p-4 ${
@@ -881,38 +1214,69 @@ const AIAssistantSection = ({ sessionId }) => {
   );
 };
 
-// Main App Component
+// ==================== MAIN APP COMPONENT ====================
 function App() {
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [activeSection, setActiveSection] = useState('dashboard');
   const [tasks, setTasks] = useState([]);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [stats, setStats] = useState(null);
   const [sessionId] = useState(() => `session_${Date.now()}`);
+  const { theme, toggleTheme } = useTheme();
+  
+  // Check for auth callback
+  const isAuthCallback = window.location.pathname === '/auth/callback' || window.location.hash?.includes('session_id=');
+  
+  // Check existing session
+  useEffect(() => {
+    if (isAuthCallback) {
+      setLoading(false);
+      return;
+    }
+    
+    const checkAuth = async () => {
+      try {
+        const response = await axios.get(`${API}/auth/me`);
+        setUser(response.data);
+      } catch (error) {
+        setUser(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    checkAuth();
+  }, [isAuthCallback]);
   
   // Fetch tasks
   const fetchTasks = useCallback(async () => {
+    if (!user) return;
     try {
       const response = await axios.get(`${API}/tasks`);
       setTasks(response.data);
     } catch (error) {
       console.error('Error fetching tasks:', error);
     }
-  }, []);
+  }, [user]);
   
   // Fetch stats
   const fetchStats = useCallback(async () => {
+    if (!user) return;
     try {
       const response = await axios.get(`${API}/tasks/stats/summary`);
       setStats(response.data);
     } catch (error) {
       console.error('Error fetching stats:', error);
     }
-  }, []);
+  }, [user]);
   
   useEffect(() => {
-    fetchTasks();
-    fetchStats();
-  }, [fetchTasks, fetchStats]);
+    if (user) {
+      fetchTasks();
+      fetchStats();
+    }
+  }, [user, fetchTasks, fetchStats]);
   
   // Task operations
   const createTask = async (taskData) => {
@@ -962,21 +1326,63 @@ function App() {
     }
   };
   
-  const quickAddTask = async (text, date) => {
-    await createTask({ text, date, priority: 'medium' });
+  const quickAddTask = async (text, date, time) => {
+    await createTask({ text, date, time, priority: 'medium' });
     toast.success('Task added!');
   };
   
-  const handleEditTask = (task) => {
-    setActiveSection('manager');
-    // The TaskManagerSection will handle the edit state
+  const handleLogout = async () => {
+    try {
+      await axios.post(`${API}/auth/logout`);
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
+    setUser(null);
+    setTasks([]);
+    setStats(null);
+    toast.success('Logged out successfully');
   };
+
+  // Loading state
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+  
+  // Auth callback
+  if (isAuthCallback) {
+    return (
+      <>
+        <Toaster position="top-right" theme={theme} />
+        <AuthCallback onLogin={(userData) => {
+          setUser(userData);
+          window.history.replaceState(null, '', '/');
+        }} />
+      </>
+    );
+  }
+  
+  // Not authenticated
+  if (!user) {
+    return (
+      <>
+        <Toaster position="top-right" theme={theme} />
+        <AuthPage onLogin={setUser} />
+      </>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
       <Toaster 
         position="top-right" 
-        theme="dark"
+        theme={theme}
         toastOptions={{
           style: {
             background: 'hsl(var(--card))',
@@ -987,7 +1393,7 @@ function App() {
       />
       
       {/* Desktop Header */}
-      <header className="hidden md:block fixed top-0 left-0 right-0 glass-strong z-40 border-b border-white/5">
+      <header className="hidden md:block fixed top-0 left-0 right-0 glass-strong z-40 border-b border-border/50">
         <div className="container mx-auto max-w-7xl px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl gradient-flow flex items-center justify-center animate-neon-glow">
@@ -995,6 +1401,7 @@ function App() {
             </div>
             <h1 className="text-xl font-bold neon-text">FlowTask Pro</h1>
           </div>
+          
           <nav className="flex gap-2">
             {[
               { id: 'dashboard', label: 'Dashboard', icon: Home },
@@ -1016,11 +1423,38 @@ function App() {
               </button>
             ))}
           </nav>
+          
+          <div className="flex items-center gap-2">
+            <button
+              onClick={toggleTheme}
+              className="p-2 rounded-xl hover:bg-muted transition-colors"
+              data-testid="theme-toggle"
+            >
+              {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+            </button>
+            
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-muted/50">
+              {user.picture ? (
+                <img src={user.picture} alt="" className="w-6 h-6 rounded-full" />
+              ) : (
+                <User className="w-5 h-5 text-muted-foreground" />
+              )}
+              <span className="text-sm font-medium">{user.name?.split(' ')[0]}</span>
+            </div>
+            
+            <button
+              onClick={handleLogout}
+              className="p-2 rounded-xl hover:bg-destructive/10 text-destructive transition-colors"
+              data-testid="logout-btn"
+            >
+              <LogOut className="w-5 h-5" />
+            </button>
+          </div>
         </div>
       </header>
       
       {/* Mobile Bottom Navigation */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 glass-strong border-t border-white/5 z-50 safe-area-bottom">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 glass-strong border-t border-border/50 z-50 safe-area-bottom">
         <div className="flex items-center justify-around py-3 px-4">
           {[
             { id: 'dashboard', label: 'Home', icon: Home },
@@ -1041,21 +1475,60 @@ function App() {
               <span className="text-[10px] font-medium">{label}</span>
             </button>
           ))}
+          
+          <button
+            onClick={toggleTheme}
+            className="flex flex-col items-center gap-1 px-4 py-2 rounded-xl text-muted-foreground touch-target"
+            data-testid="mobile-theme-toggle"
+          >
+            {theme === 'dark' ? <Sun className="w-6 h-6" /> : <Moon className="w-6 h-6" />}
+            <span className="text-[10px] font-medium">Theme</span>
+          </button>
         </div>
       </nav>
       
+      {/* Mobile Header */}
+      <header className="md:hidden fixed top-0 left-0 right-0 glass-strong z-40 border-b border-border/50 safe-area-top">
+        <div className="flex items-center justify-between px-4 py-3">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg gradient-flow flex items-center justify-center">
+              <Zap className="w-5 h-5 text-white" />
+            </div>
+            <span className="font-bold">FlowTask</span>
+          </div>
+          
+          <div className="flex items-center gap-2">
+            {user.picture ? (
+              <img src={user.picture} alt="" className="w-8 h-8 rounded-full" />
+            ) : (
+              <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
+                <User className="w-4 h-4 text-muted-foreground" />
+              </div>
+            )}
+            <button
+              onClick={handleLogout}
+              className="p-2 text-destructive"
+              data-testid="mobile-logout-btn"
+            >
+              <LogOut className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+      </header>
+      
       {/* Main Content */}
-      <main className="container mx-auto px-4 py-6 max-w-7xl md:pt-28 pb-28 md:pb-8 safe-area-top">
+      <main className="container mx-auto px-4 py-6 max-w-7xl md:pt-28 pt-20 pb-28 md:pb-8">
         {activeSection === 'dashboard' && (
           <DashboardSection
             tasks={tasks}
             selectedDate={selectedDate}
             setSelectedDate={setSelectedDate}
             onToggleTask={toggleTask}
-            onEditTask={handleEditTask}
+            onEditTask={() => setActiveSection('manager')}
             onDeleteTask={deleteTask}
             onQuickAdd={quickAddTask}
             stats={stats}
+            user={user}
           />
         )}
         
