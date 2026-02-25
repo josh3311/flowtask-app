@@ -1,34 +1,79 @@
-.App-logo {
-    height: 40vmin;
+/* FlowTask Pro - App Styles */
+
+/* Remove default center alignment */
+.App {
+    min-height: 100vh;
+}
+
+/* Responsive container */
+.container {
+    width: 100%;
+    max-width: 1280px;
+    margin: 0 auto;
+}
+
+/* Mobile optimizations */
+@media (max-width: 768px) {
+    .calendar-day {
+        height: 36px !important;
+        font-size: 0.875rem;
+    }
+    
+    .task-card {
+        touch-action: pan-y;
+        user-select: none;
+    }
+}
+
+/* Desktop sidebar for larger screens */
+@media (min-width: 1536px) {
+    .container {
+        max-width: 1400px;
+    }
+}
+
+/* Confetti animation container */
+.confetti-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 9999;
+    overflow: hidden;
+}
+
+.confetti {
+    position: absolute;
+    width: 10px;
+    height: 10px;
     pointer-events: none;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-    .App-logo {
-        animation: App-logo-spin infinite 20s linear;
+/* Focus states for accessibility */
+button:focus-visible,
+input:focus-visible,
+select:focus-visible {
+    outline: 2px solid hsl(var(--primary));
+    outline-offset: 2px;
+}
+
+/* Selection styles */
+::selection {
+    background: hsl(var(--primary) / 0.3);
+    color: hsl(var(--foreground));
+}
+
+/* Print styles */
+@media print {
+    .glass,
+    .glass-strong {
+        background: white !important;
+        backdrop-filter: none !important;
     }
-}
-
-.App-header {
-    background-color: #0f0f10;
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    font-size: calc(10px + 2vmin);
-    color: white;
-}
-
-.App-link {
-    color: #61dafb;
-}
-
-@keyframes App-logo-spin {
-    from {
-        transform: rotate(0deg);
-    }
-    to {
-        transform: rotate(360deg);
+    
+    nav {
+        display: none !important;
     }
 }
