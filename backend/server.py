@@ -585,17 +585,6 @@ async def mark_reminder_sent(task_id: str, user: User = Depends(get_current_user
     
     return {"message": "Reminder marked as sent"}
 
-@api_router.put("/tasks/reorder")
-async def reorder_tasks(request: TaskReorderRequest, user: User = Depends(get_current_user)):
-    """Reorder tasks by updating their order field"""
-    for item in request.task_orders:
-        await db.tasks.update_one(
-            {"id": item.id, "user_id": user.user_id},
-            {"$set": {"order": item.order}}
-        )
-    
-    return {"message": "Tasks reordered successfully"}
-
 # ==================== AI CHAT ENDPOINTS ====================
 
 @api_router.post("/chat")
