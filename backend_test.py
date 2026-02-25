@@ -148,22 +148,28 @@ class FlowTaskAPITester:
             return False
 
     def test_create_task(self):
-        """Test task creation"""
+        """Test task creation with time field"""
         task_data = {
             "text": f"Test task {datetime.now().strftime('%H:%M:%S')}",
             "priority": "high",
-            "date": "2024-12-20"
+            "date": "2024-12-20",
+            "time": "14:30"  # Test time field
         }
         
         success, data, response = self.make_request('POST', '/tasks', data=task_data, expected_status=201)
         
         if success and response.status_code == 201 and isinstance(data, dict) and 'id' in data:
             task_id = data['id']
+            # Verify time field is preserved
+            has_time = data.get('time') == '14:30'
+            has_user_id = data.get('user_id') == self.test_user_id
             self.created_task_ids.append(task_id)
-            self.log_test("Create task", True, f"Task ID: {task_id}")
+            
+            details = f"Task ID: {task_id}, Time: {data.get('time')}, User-specific: {has_user_id}"
+            self.log_test("Create task with time", True, details)
             return task_id
         else:
-            self.log_test("Create task", False, data)
+            self.log_test("Create task with time", False, data)
             return None
 
     def test_get_tasks(self):
