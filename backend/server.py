@@ -575,12 +575,12 @@ async def mark_reminder_sent(task_id: str, user: User = Depends(get_current_user
     return {"message": "Reminder marked as sent"}
 
 @api_router.put("/tasks/reorder")
-async def reorder_tasks(task_orders: List[dict], user: User = Depends(get_current_user)):
+async def reorder_tasks(request: TaskReorderRequest, user: User = Depends(get_current_user)):
     """Reorder tasks by updating their order field"""
-    for item in task_orders:
+    for item in request.task_orders:
         await db.tasks.update_one(
-            {"id": item.get("id"), "user_id": user.user_id},
-            {"$set": {"order": item.get("order", 0)}}
+            {"id": item.id, "user_id": user.user_id},
+            {"$set": {"order": item.order}}
         )
     
     return {"message": "Tasks reordered successfully"}
