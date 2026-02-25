@@ -66,7 +66,7 @@ class FlowTaskAPITester:
 
     def test_root_endpoint(self):
         """Test root API endpoint"""
-        success, data, response = self.make_request('GET', '/', expected_status=200)
+        success, data, response = self.make_request('GET', '/', expected_status=200, use_auth=False)
         
         if success and response.status_code == 200:
             self.log_test("Root endpoint", True, f"Response: {data}")
@@ -74,6 +74,78 @@ class FlowTaskAPITester:
             self.log_test("Root endpoint", False, data)
         
         return success
+
+    def test_register_user(self):
+        """Test user registration"""
+        timestamp = int(time.time())
+        register_data = {
+            "email": f"testuser{timestamp}@example.com",
+            "password": "password123",
+            "name": f"Test User {timestamp}"
+        }
+        
+        success, data, response = self.make_request('POST', '/auth/register', data=register_data, expected_status=200, use_auth=False)
+        
+        if success and response.status_code == 200 and isinstance(data, dict) and 'user_id' in data:
+            self.test_user_id = data['user_id']
+            # Store cookies for session-based auth
+            self.log_test("Register user", True, f"User ID: {data['user_id']}, Name: {data['name']}")
+            return True, register_data
+        else:
+            self.log_test("Register user", False, data)
+            return False, None
+
+    def test_login_user(self, credentials):
+        """Test user login"""
+        login_data = {
+            "email": credentials["email"],
+            "password": credentials["password"]
+        }
+        
+        success, data, response = self.make_request('POST', '/auth/login', data=login_data, expected_status=200, use_auth=False)
+        
+        if success and response.status_code == 200 and isinstance(data, dict) and 'user_id' in data:
+            self.test_user_id = data['user_id']
+            self.log_test("Login user", True, f"Logged in as: {data['name']}")
+            return True
+        else:
+            self.log_test("Login user", False, data)
+            return False
+
+    def test_get_me(self):
+        """Test getting current user info"""
+        success, data, response = self.make_request('GET', '/auth/me', expected_status=200, use_auth=True)
+        
+        if success and response.status_code == 200 and isinstance(data, dict) and 'user_id' in data:
+            self.log_test("Get current user (/auth/me)", True, f"User: {data['name']} ({data['email']})")
+            return True
+        else:
+            self.log_test("Get current user (/auth/me)", False, data)
+            return False
+
+    def test_logout_user(self):
+        """Test user logout"""
+        success, data, response = self.make_request('POST', '/auth/logout', expected_status=200, use_auth=False)
+        
+        if success and response.status_code == 200:
+            self.log_test("Logout user", True, "Successfully logged out")
+            return True
+        else:
+            self.log_test("Logout user", False, data)
+            return False
+
+    def test_protected_route_without_auth(self):
+        """Test that protected routes require authentication"""
+        # Clear session cookies
+        self.session.cookies.clear()
+        success, data, response = self.make_request('GET', '/tasks', expected_status=401, use_auth=False)
+        
+        if success and response.status_code == 401:
+            self.log_test("Protected route without auth (401)", True, "Correctly returned 401")
+            return True
+        else:
+            self.log_test("Protected route without auth (401)", False, f"Expected 401, got {response.status_code if response else 'No response'}")
+            return False
 
     def test_create_task(self):
         """Test task creation"""
