@@ -72,7 +72,9 @@ class Task(BaseModel):
     completed: bool = False
     priority: str = "medium"
     date: str
-    time: Optional[str] = None  # New: time field (HH:MM format)
+    time: Optional[str] = None  # Time field (HH:MM format)
+    reminder: Optional[str] = None  # Reminder: "none", "15min", "30min", "1hour", "attime"
+    reminder_sent: bool = False
     audio_base64: Optional[str] = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     order: int = 0
@@ -82,6 +84,7 @@ class TaskCreate(BaseModel):
     priority: str = "medium"
     date: str
     time: Optional[str] = None
+    reminder: Optional[str] = None
     audio_base64: Optional[str] = None
 
 class TaskUpdate(BaseModel):
@@ -90,6 +93,8 @@ class TaskUpdate(BaseModel):
     priority: Optional[str] = None
     date: Optional[str] = None
     time: Optional[str] = None
+    reminder: Optional[str] = None
+    reminder_sent: Optional[bool] = None
     audio_base64: Optional[str] = None
     order: Optional[int] = None
 
