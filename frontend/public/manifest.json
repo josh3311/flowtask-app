@@ -1,0 +1,47 @@
+{
+  "short_name": "FlowTask",
+  "name": "FlowTask Pro - AI Task Manager",
+  "description": "AI-powered task management with voice notes, calendar view, and smart productivity analysis",
+  "icons": [
+    {
+      "src": "favicon.ico",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/x-icon"
+    },
+    {
+      "src": "logo192.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "logo512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#6366F1",
+  "background_color": "#0B0C15",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "categories": ["productivity", "utilities"],
+  "shortcuts": [
+    {
+      "name": "Add Task",
+      "short_name": "Add",
+      "description": "Quickly add a new task",
+      "url": "/?action=add",
+      "icons": [{ "src": "logo192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "AI Assistant",
+      "short_name": "AI",
+      "description": "Open AI Assistant",
+      "url": "/?section=ai",
+      "icons": [{ "src": "logo192.png", "sizes": "192x192" }]
+    }
+  ]
+}
