@@ -87,6 +87,17 @@ class TaskCreate(BaseModel):
     reminder: Optional[str] = None
     audio_base64: Optional[str] = None
 
+class TaskUpdate(BaseModel):
+    text: Optional[str] = None
+    completed: Optional[bool] = None
+    priority: Optional[str] = None
+    date: Optional[str] = None
+    time: Optional[str] = None
+    reminder: Optional[str] = None
+    reminder_sent: Optional[bool] = None
+    audio_base64: Optional[str] = None
+    order: Optional[int] = None
+
 class TaskOrder(BaseModel):
     id: str
     order: int
