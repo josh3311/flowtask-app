@@ -1141,7 +1141,7 @@ function AppContent() {
   
   const reorderTasks = async (taskOrders) => {
     try {
-      await axios.put(`${API}/tasks/reorder`, taskOrders);
+      await axios.put(`${API}/tasks/reorder`, { task_orders: taskOrders });
       fetchTasks();
     } catch (error) { console.error('Error reordering tasks:', error); }
   };
