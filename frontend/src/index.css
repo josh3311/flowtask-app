@@ -4,7 +4,34 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Light Theme (default) */
 :root {
+    --background: 210 20% 98%;
+    --foreground: 222 47% 11%;
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+    --primary: 239 84% 67%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 160 84% 39%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 210 40% 96%;
+    --muted-foreground: 215 16% 47%;
+    --accent: 292 84% 61%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 239 84% 67%;
+    --radius: 0.75rem;
+    --safe-area-top: env(safe-area-inset-top);
+    --safe-area-bottom: env(safe-area-inset-bottom);
+}
+
+/* Dark Theme */
+.dark {
     --background: 235 50% 6%;
     --foreground: 210 40% 98%;
     --card: 235 35% 10%;
@@ -24,9 +51,6 @@
     --border: 215 28% 25%;
     --input: 215 28% 25%;
     --ring: 239 84% 67%;
-    --radius: 0.75rem;
-    --safe-area-top: env(safe-area-inset-top);
-    --safe-area-bottom: env(safe-area-inset-bottom);
 }
 
 * {
@@ -49,6 +73,7 @@ body {
     min-height: -webkit-fill-available;
     overflow-x: hidden;
     overscroll-behavior: none;
+    transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -59,7 +84,7 @@ code {
     font-family: 'JetBrains Mono', source-code-pro, Menlo, Monaco, Consolas, monospace;
 }
 
-/* Custom Scrollbar */
+/* Custom Scrollbar - Light */
 ::-webkit-scrollbar {
     width: 6px;
     height: 6px;
@@ -116,6 +141,11 @@ code {
     50% { transform: translateY(-5px); }
 }
 
+@keyframes tick {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
 .animate-slide-in {
     animation: slideIn 0.3s ease-out forwards;
 }
@@ -140,28 +170,46 @@ code {
     animation: float 3s ease-in-out infinite;
 }
 
-/* Glass morphism */
+/* Glass morphism - adapts to theme */
 .glass {
-    background: rgba(22, 24, 34, 0.7);
+    background: hsl(var(--card) / 0.8);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
+    border: 1px solid hsl(var(--border) / 0.5);
+}
+
+.dark .glass {
+    background: rgba(22, 24, 34, 0.7);
     border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .glass-strong {
-    background: rgba(22, 24, 34, 0.9);
+    background: hsl(var(--card) / 0.95);
     backdrop-filter: blur(24px);
     -webkit-backdrop-filter: blur(24px);
+    border: 1px solid hsl(var(--border) / 0.8);
+}
+
+.dark .glass-strong {
+    background: rgba(22, 24, 34, 0.9);
     border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-/* Neon effects */
+/* Neon effects - dark mode only */
 .neon-border {
+    border: 1px solid hsl(var(--border));
+}
+
+.dark .neon-border {
     border: 1px solid rgba(99, 102, 241, 0.3);
     box-shadow: 0 0 10px rgba(99, 102, 241, 0.2), inset 0 0 10px rgba(99, 102, 241, 0.05);
 }
 
 .neon-text {
+    color: hsl(var(--foreground));
+}
+
+.dark .neon-text {
     text-shadow: 0 0 10px rgba(99, 102, 241, 0.5), 0 0 20px rgba(99, 102, 241, 0.3);
 }
 
@@ -209,6 +257,21 @@ code {
 .touch-target {
     min-width: 44px;
     min-height: 44px;
+}
+
+/* Clock styles */
+.clock-display {
+    font-family: 'JetBrains Mono', monospace;
+    font-variant-numeric: tabular-nums;
+}
+
+/* Auth page background */
+.auth-bg {
+    background: linear-gradient(135deg, hsl(var(--background)) 0%, hsl(var(--muted)) 100%);
+}
+
+.dark .auth-bg {
+    background: linear-gradient(135deg, #0B0C15 0%, #161822 50%, #1E1B4B 100%);
 }
 
 /* Stagger animations */
