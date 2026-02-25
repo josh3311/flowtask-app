@@ -429,6 +429,17 @@ async def get_task(task_id: str, user: User = Depends(get_current_user)):
     
     return task
 
+@api_router.put("/tasks/reorder")
+async def reorder_tasks(request: TaskReorderRequest, user: User = Depends(get_current_user)):
+    """Reorder tasks by updating their order field"""
+    for item in request.task_orders:
+        await db.tasks.update_one(
+            {"id": item.id, "user_id": user.user_id},
+            {"$set": {"order": item.order}}
+        )
+    
+    return {"message": "Tasks reordered successfully"}
+
 @api_router.put("/tasks/{task_id}", response_model=Task)
 async def update_task(
     task_id: str, 
