@@ -75,7 +75,7 @@ async def root():
     return {"message": "FlowTask Pro API"}
 
 # Task CRUD endpoints
-@api_router.post("/tasks", response_model=Task)
+@api_router.post("/tasks", response_model=Task, status_code=201)
 async def create_task(task_data: TaskCreate):
     task = Task(**task_data.model_dump())
     doc = task.model_dump()
