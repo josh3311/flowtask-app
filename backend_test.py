@@ -322,40 +322,59 @@ class FlowTaskAPITester:
 
     def run_all_tests(self):
         """Run all API tests"""
-        print("🚀 Starting FlowTask Pro API Tests")
-        print("=" * 50)
+        print("🚀 Starting FlowTask Pro API Tests (with Authentication)")
+        print("=" * 60)
         
         # Test basic connectivity
         if not self.test_root_endpoint():
             print("❌ Root endpoint failed. Stopping tests.")
             return self.generate_summary()
         
-        # Test task CRUD operations
-        print("\n📋 Testing Task CRUD Operations:")
-        task_id = self.test_create_task()
+        # Test authentication flow
+        print("\n🔐 Testing Authentication:")
+        auth_success, credentials = self.test_register_user()
         
-        if task_id:
-            self.test_get_tasks()
-            self.test_get_task_by_id(task_id)
-            self.test_update_task(task_id)
-            self.test_toggle_task_completion(task_id)
+        if auth_success:
+            # Test /auth/me endpoint
+            self.test_get_me()
             
-            # Test filtering
-            print("\n🔍 Testing Task Filtering:")
-            self.test_filter_tasks_by_date()
-            self.test_filter_tasks_by_priority()
+            # Test logout
+            self.test_logout_user()
             
-            # Test stats
-            print("\n📊 Testing Statistics:")
-            self.test_get_task_stats()
+            # Test protected route without auth
+            self.test_protected_route_without_auth()
             
-        # Test error handling
-        print("\n❌ Testing Error Handling:")
-        self.test_get_nonexistent_task()
-        
-        # Test AI functionality
-        print("\n🤖 Testing AI Assistant:")
-        self.test_ai_chat()
+            # Log back in for remaining tests
+            if self.test_login_user(credentials):
+                # Verify authentication works
+                self.test_get_me()
+                
+                # Test task CRUD operations with authentication
+                print("\n📋 Testing Task CRUD Operations:")
+                task_id = self.test_create_task()
+                
+                if task_id:
+                    self.test_user_specific_tasks()
+                    self.test_get_task_by_id(task_id)
+                    self.test_update_task(task_id)
+                    self.test_toggle_task_completion(task_id)
+                    
+                    # Test filtering
+                    print("\n🔍 Testing Task Filtering:")
+                    self.test_filter_tasks_by_date()
+                    self.test_filter_tasks_by_priority()
+                    
+                    # Test stats
+                    print("\n📊 Testing Statistics:")
+                    self.test_get_task_stats()
+                
+                # Test AI functionality
+                print("\n🤖 Testing AI Assistant:")
+                self.test_ai_chat()
+                
+                # Test error handling
+                print("\n❌ Testing Error Handling:")
+                self.test_get_nonexistent_task()
         
         # Clean up
         self.cleanup_created_tasks()
