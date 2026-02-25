@@ -493,6 +493,95 @@ async def get_task_stats(user: User = Depends(get_current_user)):
         "completion_rate": round((completed_tasks / total_tasks * 100) if total_tasks > 0 else 0, 1)
     }
 
+@api_router.get("/tasks/reminders/pending")
+async def get_pending_reminders(user: User = Depends(get_current_user)):
+    """Get tasks with pending reminders that need to be triggered"""
+    now = datetime.now(timezone.utc)
+    today = now.strftime("%Y-%m-%d")
+    current_time = now.strftime("%H:%M")
+    
+    # Get all tasks for today with reminders that haven't been sent
+    tasks = await db.tasks.find(
+        {
+            "user_id": user.user_id,
+            "date": today,
+            "time": {"$ne": None},
+            "reminder": {"$ne": None, "$ne": "none"},
+            "reminder_sent": {"$ne": True},
+            "completed": False
+        },
+        {"_id": 0}
+    ).to_list(100)
+    
+    reminders_due = []
+    
+    for task in tasks:
+        task_time = task.get("time")
+        reminder_type = task.get("reminder")
+        
+        if not task_time or not reminder_type:
+            continue
+        
+        # Parse task time
+        try:
+            task_hour, task_min = map(int, task_time.split(":"))
+            task_datetime = now.replace(hour=task_hour, minute=task_min, second=0, microsecond=0)
+            
+            # Calculate reminder time based on type
+            if reminder_type == "15min":
+                reminder_datetime = task_datetime - timedelta(minutes=15)
+            elif reminder_type == "30min":
+                reminder_datetime = task_datetime - timedelta(minutes=30)
+            elif reminder_type == "1hour":
+                reminder_datetime = task_datetime - timedelta(hours=1)
+            elif reminder_type == "attime":
+                reminder_datetime = task_datetime
+            else:
+                continue
+            
+            # Check if reminder is due (within 1 minute window)
+            time_diff = (now - reminder_datetime).total_seconds()
+            if -60 <= time_diff <= 60:
+                reminders_due.append({
+                    "id": task.get("id"),
+                    "text": task.get("text"),
+                    "time": task_time,
+                    "reminder_type": reminder_type,
+                    "is_due": reminder_type == "attime"
+                })
+        except (ValueError, TypeError):
+            continue
+    
+    return {"reminders": reminders_due}
+
+@api_router.post("/tasks/{task_id}/reminder-sent")
+async def mark_reminder_sent(task_id: str, user: User = Depends(get_current_user)):
+    """Mark a task's reminder as sent"""
+    result = await db.tasks.update_one(
+        {"id": task_id, "user_id": user.user_id},
+        {"$set": {"reminder_sent": True}}
+    )
+    
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Task not found")
+    
+    return {"message": "Reminder marked as sent"}
+
+@api_router.put("/tasks/reorder")
+async def reorder_tasks(task_orders: List[dict], user: User = Depends(get_current_user)):
+    """Reorder tasks by updating their order field"""
+    for item in task_orders:
+        await db.tasks.update_one(
+            {"id": item.get("id"), "user_id": user.user_id},
+            {"$set": {"order": item.get("order", 0)}}
+        )
+    
+    return {"message": "Tasks reordered successfully"}
+        "completed": completed_tasks,
+        "pending": total_tasks - completed_tasks,
+        "completion_rate": round((completed_tasks / total_tasks * 100) if total_tasks > 0 else 0, 1)
+    }
+
 # ==================== AI CHAT ENDPOINTS ====================
 
 @api_router.post("/chat")
