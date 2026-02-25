@@ -11,6 +11,9 @@ class FlowTaskAPITester:
         self.tests_passed = 0
         self.created_task_ids = []
         self.session_id = f"test_session_{int(time.time())}"
+        self.session = requests.Session()  # Use session to maintain cookies
+        self.auth_token = None
+        self.test_user_id = None
 
     def log_test(self, name, passed, details=""):
         """Log test results"""
