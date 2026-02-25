@@ -172,7 +172,7 @@ const DashboardSection = ({ tasks, selectedDate, setSelectedDate, onToggleTask, 
       {/* Header */}
       <header className="mb-8 text-left">
         <h1 className="text-4xl md:text-5xl font-bold mb-2">
-          <span className="gradient-flow bg-clip-text text-transparent">FlowTask</span>
+          <span className="bg-gradient-to-r from-primary via-accent to-secondary bg-clip-text text-transparent">FlowTask</span>
         </h1>
         <p className="text-muted-foreground text-lg">
           You have <span className="text-primary font-semibold">{stats?.pending || 0}</span> tasks pending
@@ -486,7 +486,7 @@ const TaskManagerSection = ({ tasks, onCreateTask, onUpdateTask, onDeleteTask, o
     <div className="animate-slide-up">
       <header className="mb-8">
         <h1 className="text-4xl font-bold mb-2">
-          <span className="gradient-flow bg-clip-text text-transparent">Task Manager</span>
+          <span className="bg-gradient-to-r from-primary via-accent to-secondary bg-clip-text text-transparent">Task Manager</span>
         </h1>
         <p className="text-muted-foreground">Full control over your tasks</p>
       </header>
@@ -760,7 +760,7 @@ const AIAssistantSection = ({ sessionId }) => {
     <div className="animate-slide-up">
       <header className="mb-6 text-center max-w-2xl mx-auto">
         <h1 className="text-4xl font-bold mb-2">
-          <span className="gradient-flow bg-clip-text text-transparent">AI Assistant</span>
+          <span className="bg-gradient-to-r from-primary via-accent to-secondary bg-clip-text text-transparent">AI Assistant</span>
         </h1>
         <p className="text-muted-foreground">Smart task analysis powered by FlowAI</p>
       </header>
