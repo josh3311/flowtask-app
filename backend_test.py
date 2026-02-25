@@ -172,15 +172,20 @@ class FlowTaskAPITester:
             self.log_test("Create task with time", False, data)
             return None
 
-    def test_get_tasks(self):
-        """Test getting all tasks"""
+    def test_user_specific_tasks(self):
+        """Test that tasks are user-specific"""
         success, data, response = self.make_request('GET', '/tasks', expected_status=200)
         
         if success and response.status_code == 200 and isinstance(data, list):
-            self.log_test("Get all tasks", True, f"Found {len(data)} tasks")
+            # Verify all tasks belong to current user
+            user_tasks = [task for task in data if task.get('user_id') == self.test_user_id]
+            all_user_specific = len(user_tasks) == len(data)
+            
+            details = f"Found {len(data)} tasks, {len(user_tasks)} belong to current user, All user-specific: {all_user_specific}"
+            self.log_test("User-specific tasks", True, details)
             return True
         else:
-            self.log_test("Get all tasks", False, data)
+            self.log_test("User-specific tasks", False, data)
             return False
 
     def test_get_task_by_id(self, task_id):
